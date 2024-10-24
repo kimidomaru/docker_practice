@@ -24,7 +24,7 @@ services:
       - application-network
     depends_on:
       - backend
-      
+
   db:
     image: postgres:latest
     environment:
