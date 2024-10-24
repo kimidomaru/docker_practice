@@ -1,4 +1,4 @@
-FROM node:23-alpine3.19 as build
+FROM node:22-alpine3.19 as build
 
 WORKDIR /app
 
@@ -7,6 +7,9 @@ COPY ./package.json ./package-lock.json ./
 RUN yarn install
 
 COPY . .
+
+ARG REACT_APP_BACKEND_URL
+ENV REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL:-http://localhost/api}
 
 RUN yarn build
 
