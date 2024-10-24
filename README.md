@@ -1,155 +1,113 @@
-Aqui está um exemplo de um arquivo `README.md` para o seu jogo:
+# Projeto: Docker Compose Guess Game
 
----
+## Sumário
+1. [Descrição da Aplicação](#descrição-da-aplicação)
+2. [Estrutura de Containers](#estrutura-de-containers)
+    - [Arquitetura dos componentes](#arquitetura-dos-componentes)
+3. [Boas Práticas Adotadas](#boas-práticas-adotadas)
+4. [Atualizar componentes](#atualizar-componentes)
+5. [Escalabilidade](#escalabilidade)
+6. [Requisitos](#requisitos)
+7. [Instruções de Instalação e Execução](#instruções-de-instalação-e-execução)
+    - [1. Clonar o repositório](#1-clonar-o-repositório)
+    - [2. Navegar até o diretório do projeto](#2-navegar-até-o-diretório-do-projeto)
+    - [3. Construir e iniciar os containers](#3-construir-e-iniciar-os-containers)
+    - [4. Acessar a aplicação](#4-acessar-a-aplicação)
+8. [Como Limpar o Projeto](#como-limpar-o-projeto)
+## Descrição da Aplicação
 
-# Jogo de Adivinhação com Flask
+Este projeto é uma prática de orquestração do projeto [GuessGame](https://github.com/fams/guess_game), onde os jogadores tentam adivinhar uma palavra secreta. A aplicação consiste em um frontend desenvolvido em React, que se comunica com um backend em Node.js, responsável pela lógica do jogo e pela persistência dos dados em um banco de dados PostgreSQL. A proposta desse exercício é colocar em prática boas práticas de containerização e orquestração.
 
-Este é um simples jogo de adivinhação desenvolvido utilizando o framework Flask. O jogador deve adivinhar uma senha criada aleatoriamente, e o sistema fornecerá feedback sobre o número de letras corretas e suas respectivas posições.
+## Estrutura de Containers
 
-## Funcionalidades
+O ambiente é estruturado utilizando Docker e Docker Compose, com os seguintes serviços:
 
-- Criação de um novo jogo com uma senha fornecida pelo usuário.
-- Adivinhe a senha e receba feedback se as letras estão corretas e/ou em posições corretas.
-- As senhas são armazenadas  utilizando base64.
-- As adivinhações incorretas retornam uma mensagem com dicas.
-  
+- **Nginx**: Serve o frontend e atua como proxy reverso, redirecionando as requisições para o backend. Também atua como loadbalancer para o caso de instancia de múltiplos backends.
+- **Frontend**: A aplicação React que permite a interação do usuário.
+- **Backend**: A API em Node.js que processa as lógicas do jogo e gerencia a comunicação com o banco de dados.
+- **PostgreSQL**: O banco de dados que armazena informações do jogo, como usuários e palavras.
+
+### Arquitetura dos componentes
+
+```mermaid
+graph LR;
+    Nginx --> Frontend;
+    Frontend --> Backend;
+    Backend --> PostgreSQL;
+```
+
+## Boas Práticas Adotadas
+- Uso de Docker e Docker Compose: Todos os serviços são containerizados, garantindo consistência e isolamento entre os ambientes.
+- Proxy Reverso com Nginx: O Nginx atua como proxy reverso, servindo o frontend e redirecionando as requisições para o backend. Isso oferece mais flexibilidade e segurança para o gerenciamento do tráfego.
+- Separação de serviços: A aplicação foi estruturada para que o frontend, backend e banco de dados PostgreSQL sejam independentes, facilitando manutenção e escalabilidade.
+- Persistência de dados: O banco de dados PostgreSQL possui volumes configurados para garantir a persistência dos dados.
+- Segregação de redes: O front e o back compartilham uma rede de aplicação, enquanto o banco de dados está em uma rede separada, cujo acesso é restrito ao backend, melhorando a segurança da aplicação.
+
+## Atualizar componentes
+
+Atualizar um dos componentes da estrutura é simples. Você pode modificar o Dockerfile ou os arquivos do serviço específico e usar o comando:
+
+```bash
+docker-compose up --build
+```
+
+## Escalabilidade 
+O backend pode ser facilmente escalado para lidar com um maior número de requisições. Para isso, basta ajustar o número de réplicas do serviço de backend no arquivo docker-compose.yml. Por exemplo, para escalar o backend, basta adicionar:
+
+```yaml
+backend:
+  build:
+    context: .
+  restart: always
+  depends_on:
+    - db
+  deploy:
+    replicas: n
+```
+Onde `n` é o número de réplicas desejado.
+
 ## Requisitos
 
-- Python 3.8+
-- Flask
-- Um banco de dados local (ou um mecanismo de armazenamento configurado em `current_app.db`)
-- node 18.17.0
+Para executar este projeto, você precisará ter os seguintes softwares instalados:
 
-## Instalação
-
-1. Clone o repositório:
-
-   ```bash
-   git clone https://github.com/fams/guess_game.git
-   cd guess-game
-   ```
-
-2. Crie um ambiente virtual e ative-o:
-
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate  # Linux/Mac
-   venv\Scripts\activate  # Windows
-   ```
-
-3. Instale as dependências:
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. Configure o banco de dados com as variáveis de ambiente no arquivo start-backend.sh
-    1. Para sqlite
-
-        ```bash
-            export FLASK_APP="run.py"
-            export FLASK_DB_TYPE="sqlite"            # Use SQLITE
-            export FLASK_DB_PATH="caminho/db.sqlite" # caminho do banco
-        ```
-
-    2. Para Postgres
-
-        ```bash
-            export FLASK_APP="run.py"
-            export FLASK_DB_TYPE="postgres"       # Use postgres
-            export FLASK_DB_USER="postgres"       # Usuário do banco
-            export FLASK_DB_NAME="postgres"       # Nome do Banco
-            export FLASK_DB_PASSWORD="secretpass" # Senha do banco
-            export FLASK_DB_HOST="localhost"      # Hostname
-            export FLASK_DB_PORT="5432"           # Porta
-        ```
-
-    3. Para DynamoDB
-
-        ```bash
-        export FLASK_APP="run.py"
-        export FLASK_DB_TYPE="dynamodb"       # Use postgres
-        export AWS_DEFAULT_REGION="us-east-1" # AWS region
-        export AWS_ACCESS_KEY_ID="FAKEACCESSKEY123456" 
-        export AWS_SECRET_ACCESS_KEY="FakeSecretAccessKey987654321"
-        export AWS_SESSION_TOKEN="FakeSessionTokenABCDEFGHIJKLMNOPQRSTUVXYZ1234567890"
-        ```
-
-5. Execute o backend
-
-   ```bash
-   ./start-backend.sh &
-   ```
-
-## Frontend
-No diretorio de frontend
-
-1. Instale o node com o nvm. Se não tiver o nvm instalado, siga o [tutorial](https://github.com/nvm-sh/nvm?tab=readme-ov-file#installing-and-updating)
-
-    ```bash
-    nvm install 18.17.0
-    nvm use 18.17.0
-    # Habilite o yarn
-    corepack enable
-    ```
-
-2. Instale as dependências do node com o npm:
-
-    ```bash
-    npm install
-    ```
-
-3. Exporte a url onde está executando o backend e execute o backend.
-
-   ```bash
-    export REACT_APP_BACKEND_URL=http://localhost:5000
-    yarn start
-   ```
-
-## Como Jogar
-
-### 1. Criar um novo jogo
-
-Acesse a url do frontend http://localhost:3000
-
-Digite uma frase secreta
-
-Envie
-
-Salve o game-id
+- [Docker](https://docs.docker.com/engine/install/): Para criar e gerenciar os containers.
+- [Docker Compose](https://docs.docker.com/compose/install/): Para orquestrar os containers.
+- [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git): Para clonar o repositório do projeto.
 
 
-### 2. Adivinhar a senha
+## Instruções de Instalação e Execução
 
-Acesse a url do frontend http://localhost:3000
+### 1. Clonar o repositório
 
-Vá para o endponint breaker
+```shell
+git clone https://github.com/kimidomaru/docker_practice.git
+```
 
-entre com o game_id que foi gerado pelo Creator
+### 2. Navegar até o diretório do projeto
 
-Tente adivinhar
+```shell
+cd docker_practice
+```
 
-## Estrutura do Código
+### 3. Construir e iniciar os containers
 
-### Rotas:
+```shell
+docker-compose up --build
+```
 
-- **`/create`**: Cria um novo jogo. Armazena a senha codificada em base64 e retorna um `game_id`.
-- **`/guess/<game_id>`**: Permite ao usuário adivinhar a senha. Compara a adivinhação com a senha armazenada e retorna o resultado.
+### 4. Acessar a aplicação
 
-### Classes Importantes:
+Abra o navegador e acesse [http://localhost](http://localhost) para interagir com a aplicação.
 
-- **`Guess`**: Classe responsável por gerenciar a lógica de comparação entre a senha e a tentativa do jogador.
-- **`WrongAttempt`**: Exceção personalizada que é levantada quando a tentativa está incorreta.
+## Como Limpar o Projeto
+Para limpar o projeto e remover os containers, volumes e redes criados pelo Docker Compose, siga os passos abaixo:
 
+1. Parar e remover os containers
+```bash
+docker-compose down
+```
 
-
-## Melhorias Futuras
-
-- Implementar autenticação de usuário para salvar e carregar jogos.
-- Adicionar limite de tentativas.
-- Melhorar a interface de feedback para as tentativas de adivinhação.
-
-## Licença
-
-Este projeto está licenciado sob a [MIT License](LICENSE).
-
+2. Remover volumes associados
+```
+docker-compose down -v
+```
