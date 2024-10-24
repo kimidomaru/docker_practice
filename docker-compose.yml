@@ -1,0 +1,60 @@
+services:
+  backend:
+    build:
+      context: .
+    restart: always
+    depends_on:
+      - db
+    deploy:
+      replicas: 1
+    expose:
+      - 5000
+    networks: 
+      - application-network
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: frontend
+    restart: always
+    ports:
+      - "80:80"
+    networks:
+      - application-network
+    environment:
+      - REACT_APP_BACKEND_URL=http://localhost
+    depends_on:
+      - backend
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secretpass
+      POSTGRES_DB: postgres
+    container_name: db
+    restart: always
+    expose: 
+      - 5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - application-network
+
+ # nginx:
+ #   image: nginx:alpine
+ #   ports:
+ #   - 80:80
+ #   restart: always
+ #   depends_on:
+ #     - backend
+ #     - frontend
+ #   volumes:
+ #     - ./nginx.conf:/etc/nginx/nginx.conf
+ #   networks:
+ #     - application-network
+
+volumes:
+  postgres_data:
+
+networks:
+  application-network:
